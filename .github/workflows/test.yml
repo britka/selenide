@@ -192,6 +192,35 @@ jobs:
             **/build/reports
             **/build/test-results
 
+  run-webkit-tests-on-linux:
+    name: linux:webkit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Install WebKitGTK Driver
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y webkit2gtk-driver xvfb
+      - name: Set up JDK
+        uses: actions/setup-java@v6
+        with:
+          distribution: 'temurin'
+          cache: 'gradle'
+          java-version: '17'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6.4.0
+      - name: Run the tests
+        run: xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24" ./gradlew ':modules:webkit':webkit --no-daemon --console=plain
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: test-report-linux-webkit
+          retention-days: 14
+          path: |
+            **/build/reports
+            **/build/test-results
+
   run-smoke-tests-on-linux-arm:
     name: linux-arm:${{ matrix.browser }}_smoke
     runs-on: ubuntu-26.04-arm
@@ -380,7 +409,7 @@ jobs:
   auto-merge-dependabot:
     name: 🤖 Auto merge dependabot PR
     timeout-minutes: 10
-    needs: [run-unit-tests-on-linux, run-browser-tests-on-linux, run-smoke-tests-on-linux-arm, verify-browser-test-coverage, run-tests-on-windows, run-android-tests, run-ios-tests, run-selenoid-tests, run-moon-tests]
+    needs: [run-unit-tests-on-linux, run-browser-tests-on-linux, run-webkit-tests-on-linux, run-smoke-tests-on-linux-arm, verify-browser-test-coverage, run-tests-on-windows, run-android-tests, run-ios-tests, run-selenoid-tests, run-moon-tests]
     if: ${{ github.event.pull_request.user.login == 'dependabot[bot]' }}
     runs-on: ubuntu-latest
     permissions:
