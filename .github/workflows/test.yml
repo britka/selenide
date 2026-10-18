@@ -201,7 +201,7 @@ jobs:
       - name: Install WebKitGTK Driver
         run: |
           sudo apt-get update
-          sudo apt-get install -y webkit2gtk-driver xvfb
+          sudo apt-get install -y libwebkitgtk-6.0-4 webkit2gtk-driver xvfb
       - name: Set up JDK
         uses: actions/setup-java@v6
         with:
