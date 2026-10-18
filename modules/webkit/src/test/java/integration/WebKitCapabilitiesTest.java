@@ -9,23 +9,16 @@ import org.openqa.selenium.Dimension;
 import org.openqa.selenium.Keys;
 
 import java.io.File;
+import java.time.Duration;
 
 import static com.codeborne.selenide.Condition.attribute;
 import static com.codeborne.selenide.Condition.cssClass;
 import static com.codeborne.selenide.Condition.exactText;
 import static com.codeborne.selenide.Condition.hidden;
 import static com.codeborne.selenide.Condition.visible;
+import static com.codeborne.selenide.CookieStoreConditions.cookie;
 import static com.codeborne.selenide.Selectors.shadowCss;
-import static com.codeborne.selenide.Selenide.$;
-import static com.codeborne.selenide.Selenide.$$;
-import static com.codeborne.selenide.Selenide.Wait;
-import static com.codeborne.selenide.Selenide.executeAsyncJavaScript;
-import static com.codeborne.selenide.Selenide.executeJavaScript;
-import static com.codeborne.selenide.Selenide.localStorage;
-import static com.codeborne.selenide.Selenide.open;
-import static com.codeborne.selenide.Selenide.screenshot;
-import static com.codeborne.selenide.Selenide.sessionStorage;
-import static com.codeborne.selenide.Selenide.switchTo;
+import static com.codeborne.selenide.Selenide.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 final class WebKitCapabilitiesTest extends BaseWebKitTest {
@@ -97,8 +90,7 @@ final class WebKitCapabilitiesTest extends BaseWebKitTest {
       $("#iframe-input").shouldBe(visible).setValue("Hello from WebKit Iframe");
       $("#iframe-btn").click();
       $("#iframe-status").shouldHave(exactText("Clicked: Hello from WebKit Iframe"));
-    }
-    finally {
+    } finally {
       switchTo().defaultContent();
     }
 
@@ -129,16 +121,28 @@ final class WebKitCapabilitiesTest extends BaseWebKitTest {
     assertThat(sessionStorage().getItem("session_token")).isEqualTo("abc-123");
     sessionStorage().clear();
 
-    var manage = WebDriverRunner.getWebDriver().manage();
-    manage.addCookie(new Cookie("webkit_cookie", "cookie_val_42"));
-    Wait().until(d -> d.manage().getCookieNamed("webkit_cookie") != null);
-    Cookie cookie = manage.getCookieNamed("webkit_cookie");
+    cookies().add(new Cookie("webkit_cookie", "cookie_val_42"));
+    Cookie cookie = cookies().get("webkit_cookie");
     assertThat(cookie).isNotNull();
     assertThat(cookie.getValue()).isEqualTo("cookie_val_42");
 
+
+// TODO delete cookie is not working now
+//    WebDriverRunner.getWebDriver().manage().deleteCookieNamed("webkit_cookie");//
+//    cookies().object().delete("webkit_cookie");
+
+    executeJavaScript("document.cookie = '" + cookie.getName() + "=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'");
+    cookies().shouldNotHave(cookie("webkit_cookie"));
+
+    cookies().add(cookie);
+    assertThat(cookies().size()).isEqualTo(1);
+
+    cookies().clear();
+    assertThat(cookies().size()).isEqualTo(0);
+
     String asyncResult = executeAsyncJavaScript(
       "const callback = arguments[arguments.length - 1];" +
-      "setTimeout(() => callback('async-js-ok'), 100);"
+        "setTimeout(() => callback('async-js-ok'), 100);"
     );
     assertThat(asyncResult).isEqualTo("async-js-ok");
   }
