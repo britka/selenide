@@ -18,6 +18,7 @@ import static com.codeborne.selenide.Condition.visible;
 import static com.codeborne.selenide.Selectors.shadowCss;
 import static com.codeborne.selenide.Selenide.$;
 import static com.codeborne.selenide.Selenide.$$;
+import static com.codeborne.selenide.Selenide.Wait;
 import static com.codeborne.selenide.Selenide.executeAsyncJavaScript;
 import static com.codeborne.selenide.Selenide.executeJavaScript;
 import static com.codeborne.selenide.Selenide.localStorage;
@@ -130,6 +131,7 @@ final class WebKitCapabilitiesTest extends BaseWebKitTest {
 
     var manage = WebDriverRunner.getWebDriver().manage();
     manage.addCookie(new Cookie("webkit_cookie", "cookie_val_42"));
+    Wait().until(d -> d.manage().getCookieNamed("webkit_cookie") != null);
     Cookie cookie = manage.getCookieNamed("webkit_cookie");
     assertThat(cookie).isNotNull();
     assertThat(cookie.getValue()).isEqualTo("cookie_val_42");
