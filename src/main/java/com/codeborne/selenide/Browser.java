@@ -10,6 +10,7 @@ import static com.codeborne.selenide.Browsers.HTMLUNIT;
 import static com.codeborne.selenide.Browsers.IE;
 import static com.codeborne.selenide.Browsers.INTERNET_EXPLORER;
 import static com.codeborne.selenide.Browsers.SAFARI;
+import static com.codeborne.selenide.Browsers.WEBKIT;
 
 public class Browser {
   public final String name;
@@ -55,6 +56,10 @@ public class Browser {
 
   public boolean isHtmlUnit() {
     return HTMLUNIT.equalsIgnoreCase(name);
+  }
+
+  public boolean isWebkit() {
+    return WEBKIT.equalsIgnoreCase(name);
   }
 
   public boolean supportsInsecureCerts() {

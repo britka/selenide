@@ -13,7 +13,10 @@ import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
+import static com.codeborne.selenide.Browsers.WEBKIT;
+
 public class DefaultDriverFactory extends AbstractDriverFactory {
+  private static final String WEBKIT_DRIVER_FACTORY = "org.selenide.webkit.WebKitDriverFactory";
 
   @Override
   public WebDriver create(Config config, Browser browser, @Nullable Proxy proxy, @Nullable File browserDownloadsFolder) {
@@ -52,6 +55,15 @@ public class DefaultDriverFactory extends AbstractDriverFactory {
   }
 
   private Class<?> classOf(String className) {
+    if (WEBKIT.equalsIgnoreCase(className)) {
+      try {
+        return Class.forName(WEBKIT_DRIVER_FACTORY);
+      }
+      catch (ClassNotFoundException e) {
+        throw new IllegalStateException(
+          "WebKit driver not found. Add dependency \"com.codeborne:selenide-webkit\" to your project.", e);
+      }
+    }
     try {
       return Class.forName(className);
     }

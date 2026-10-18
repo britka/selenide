@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>WebKit Capabilities Playground</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .hover-box {
+      padding: 16px;
+      border: 2px dashed #6c757d;
+      border-radius: 8px;
+      text-align: center;
+      cursor: pointer;
+      user-select: none;
+    }
+    .hover-box.hovered {
+      border-color: #198754;
+      background-color: #d1e7dd;
+    }
+    #drag-source {
+      width: 120px;
+      padding: 10px;
+      background: #0d6efd;
+      color: white;
+      text-align: center;
+      border-radius: 6px;
+      cursor: grab;
+    }
+    #drop-target {
+      width: 180px;
+      height: 80px;
+      border: 2px dashed #0d6efd;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body class="p-4">
+  <div class="container">
+    <h1 id="page-title" class="display-6 mb-4">WebKit Capabilities Playground</h1>
+
+    <!-- 1. Dynamic Async Loading -->
+    <section id="async-section" class="mb-4 p-3 border rounded">
+      <h3>1. Dynamic Async Loading</h3>
+      <button id="load-data-btn" class="btn btn-primary" type="button">Load Data</button>
+      <div id="loading-spinner" class="mt-2 text-muted" style="display: none;">Loading...</div>
+      <div id="async-result" class="mt-2 fw-bold text-success" style="display: none;"></div>
+    </section>
+
+    <!-- 2. Collections & Filtering -->
+    <section id="collection-section" class="mb-4 p-3 border rounded">
+      <h3>2. Elements Collection & Filtering</h3>
+      <input id="search-filter" class="form-control mb-2" type="text" placeholder="Filter items...">
+      <ul id="framework-list" class="list-group">
+        <li class="list-group-item framework-item" data-category="browser">WebKit</li>
+        <li class="list-group-item framework-item" data-category="framework">Selenide</li>
+        <li class="list-group-item framework-item" data-category="framework">Selenium</li>
+        <li class="list-group-item framework-item" data-category="test">JUnit 6</li>
+      </ul>
+    </section>
+
+    <!-- 3. Mouse & Keyboard Events -->
+    <section id="events-section" class="mb-4 p-3 border rounded">
+      <h3>3. Mouse & Keyboard Interactions</h3>
+      <div id="interactive-box" class="hover-box mb-2">
+        Hover, Double-Click, or Right-Click me
+      </div>
+      <p id="mouse-event-log" class="mb-2">No event</p>
+      <input id="key-input" class="form-control" type="text" placeholder="Press Enter or Escape here">
+      <p id="key-event-log" class="mt-1 mb-0">Last key: none</p>
+    </section>
+
+    <!-- 4. Iframe -->
+    <section id="iframe-section" class="mb-4 p-3 border rounded">
+      <h3>4. Iframe Switching</h3>
+      <iframe id="test-iframe" name="test-iframe" src="iframe-content.html" width="100%" height="150" style="border: 1px solid #ccc;"></iframe>
+    </section>
+
+    <!-- 5. Shadow DOM -->
+    <section id="shadow-section" class="mb-4 p-3 border rounded">
+      <h3>5. Shadow DOM</h3>
+      <div id="shadow-host"></div>
+    </section>
+
+    <!-- 6. Canvas & Geometry for Screenshots -->
+    <section id="visual-section" class="mb-4 p-3 border rounded">
+      <h3>6. Visual Element & Canvas</h3>
+      <div id="badge-card" class="p-3 bg-dark text-white rounded d-inline-block">
+        <span id="badge-label">WebKit Native Render</span>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // 1. Dynamic Async Loading
+    document.getElementById('load-data-btn').addEventListener('click', () => {
+      const spinner = document.getElementById('loading-spinner');
+      const result = document.getElementById('async-result');
+      result.style.display = 'none';
+      result.textContent = '';
+      spinner.style.display = 'block';
+      setTimeout(() => {
+        spinner.style.display = 'none';
+        result.textContent = 'Async payload loaded in WebKit!';
+        result.style.display = 'block';
+      }, 400);
+    });
+
+    // 2. Collections & Filtering
+    document.getElementById('search-filter').addEventListener('input', (e) => {
+      const query = e.target.value.toLowerCase();
+      document.querySelectorAll('.framework-item').forEach(item => {
+        const match = item.textContent.toLowerCase().includes(query);
+        item.style.display = match ? '' : 'none';
+      });
+    });
+
+    // 3. Mouse & Keyboard Events
+    const box = document.getElementById('interactive-box');
+    const mouseLog = document.getElementById('mouse-event-log');
+    box.addEventListener('mouseenter', () => {
+      box.classList.add('hovered');
+      mouseLog.textContent = 'Hovered';
+    });
+    box.addEventListener('dblclick', () => {
+      mouseLog.textContent = 'Double-Clicked';
+    });
+    box.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      mouseLog.textContent = 'Right-Clicked';
+    });
+
+    const keyInput = document.getElementById('key-input');
+    const keyLog = document.getElementById('key-event-log');
+    keyInput.addEventListener('keydown', (e) => {
+      keyLog.textContent = 'Last key: ' + e.key;
+    });
+
+    // 5. Shadow DOM initialization
+    const shadowHost = document.getElementById('shadow-host');
+    const shadowRoot = shadowHost.attachShadow({ mode: 'open' });
+    shadowRoot.innerHTML = `
+      <div style="padding: 10px; border: 1px solid #0dcaf0; border-radius: 6px;">
+        <span id="shadow-text">Shadow DOM Initial</span>
+        <button id="shadow-btn" type="button">Activate Shadow</button>
+      </div>
+    `;
+    shadowRoot.getElementById('shadow-btn').addEventListener('click', () => {
+      shadowRoot.getElementById('shadow-text').textContent = 'Shadow DOM Activated!';
+    });
+  </script>
+</body>
+</html>

@@ -11,4 +11,5 @@ public interface Browsers {
   String FIREFOX = "firefox";
   String SAFARI = "safari";
   String HTMLUNIT = "htmlunit";
+  String WEBKIT = "webkit";
 }

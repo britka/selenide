@@ -45,6 +45,9 @@ You can use Selenide for running tests in Selenium Grid. See plugin [selenide-gr
 #### Selenide Video Recorder
 You can record videos when running Selenide tests. See plugin [selenide-video-recorder](https://github.com/selenide/selenide/tree/main/modules/video-recorder).
 
+#### Selenide with WebKit
+You can run Selenide tests against native WebKit (`MiniBrowser` on Windows and Linux/WSL). See plugin [selenide-webkit](https://github.com/selenide/selenide/tree/main/modules/webkit).
+
 
 ## AI
 Selenide can be used by your AI agents.

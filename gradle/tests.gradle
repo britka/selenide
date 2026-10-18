@@ -149,6 +149,20 @@ subprojects {
     outputs.upToDateWhen {false}
   }
 
+  tasks.register("webkit", Test) {
+    usesService(browserTestLock)
+    systemProperties['selenide.browser'] = 'webkit'
+    include 'integration/**/*'
+    exclude 'com/codeborne/selenide/**/*'
+    exclude 'org/selenide/**/*'
+    useJUnitPlatform {
+      if (System.getProperty('webdriver.webkit.update') != 'true') {
+        excludeTags 'update'
+      }
+    }
+    outputs.upToDateWhen {false}
+  }
+
   tasks.register("firefox_remote", Test) {
     usesService(browserTestLock)
     systemProperties['selenide.remote'] = 'http://localhost:4444/wd/hub'
@@ -167,7 +181,7 @@ subprojects {
     systemProperties['selenide.downloadsFolder'] = layout.buildDirectory.dir("tests/downloads").get().asFile
 
     System.properties.stringPropertyNames()
-      .findAll { it.startsWith("selenide.") }
+      .findAll { it.startsWith("selenide.") || it.startsWith("webdriver.") }
       .forEach {
         println " set ${it} to ${System.getProperty(it)}"
         systemProperties[it] = System.getProperty(it)

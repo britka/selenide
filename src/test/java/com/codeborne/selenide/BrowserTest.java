@@ -13,6 +13,7 @@ import static com.codeborne.selenide.Browsers.FIREFOX;
 import static com.codeborne.selenide.Browsers.HTMLUNIT;
 import static com.codeborne.selenide.Browsers.IE;
 import static com.codeborne.selenide.Browsers.INTERNET_EXPLORER;
+import static com.codeborne.selenide.Browsers.WEBKIT;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -41,6 +42,14 @@ final class BrowserTest {
     assertThat(new Browser("HtmlUnit", false).isHtmlUnit()).isTrue();
     assertThat(new Browser(HTMLUNIT, false).isChromium()).isFalse();
     assertThat(new Browser(CHROME, false).isHtmlUnit()).isFalse();
+  }
+
+  @Test
+  void webkitBrowserTest() {
+    assertThat(new Browser(WEBKIT, false).isWebkit()).isTrue();
+    assertThat(new Browser("WebKit", false).isWebkit()).isTrue();
+    assertThat(new Browser(WEBKIT, false).isChromium()).isFalse();
+    assertThat(new Browser(CHROME, false).isWebkit()).isFalse();
   }
 
   @Test
