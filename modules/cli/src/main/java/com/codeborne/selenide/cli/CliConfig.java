@@ -16,7 +16,8 @@ final class CliConfig {
   }
 
   static SelenideConfig toConfig(String[] args) {
-    SelenideConfig config = new SelenideConfig();
+    // AI agents read page dumps of `screenshot` command, and plain HTML is much easier to read than MHTML
+    SelenideConfig config = new SelenideConfig().savePageSourceWithResources(false);
     for (String arg : args) {
       applyBrowserArg(config, arg);
       applyConnectionArg(config, arg);
@@ -41,6 +42,9 @@ final class CliConfig {
     }
     else if (arg.startsWith("--browser-position=")) {
       config.browserPosition(value(arg));
+    }
+    else if (arg.startsWith("--timezone=")) {
+      config.timezone(value(arg));
     }
     else if (arg.equals("--headless")) {
       config.headless(true);

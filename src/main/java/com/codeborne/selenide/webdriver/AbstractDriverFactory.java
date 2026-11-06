@@ -4,15 +4,22 @@ import com.codeborne.selenide.Browser;
 import com.codeborne.selenide.Config;
 import com.codeborne.selenide.impl.AttachmentHandler;
 import com.codeborne.selenide.impl.FileNamer;
+import com.codeborne.selenide.proxy.SelenideSeleniumProxy;
 import org.jspecify.annotations.Nullable;
 import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.MutableCapabilities;
 import org.openqa.selenium.Proxy;
+import org.openqa.selenium.remote.service.DriverFinder;
 import org.openqa.selenium.remote.service.DriverService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.time.ZoneId;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -20,6 +27,7 @@ import static com.codeborne.selenide.impl.FileHelper.ensureFolderExists;
 import static com.codeborne.selenide.impl.Plugins.inject;
 import static java.lang.Integer.parseInt;
 import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS;
 import static org.openqa.selenium.UnexpectedAlertBehaviour.IGNORE;
 import static org.openqa.selenium.remote.CapabilityType.ACCEPT_INSECURE_CERTS;
 import static org.openqa.selenium.remote.CapabilityType.BROWSER_VERSION;
@@ -31,6 +39,7 @@ public abstract class AbstractDriverFactory implements DriverFactory {
   private static final Logger log = LoggerFactory.getLogger(AbstractDriverFactory.class);
   private static final Pattern REGEX_SIGNED_INTEGER = Pattern.compile("^-?\\d+$");
   private static final Pattern REGEX_VERSION = Pattern.compile("(\\d+)(\\..*)?");
+  private static final List<String> VENDOR_OPTIONS = List.of("selenoid:options", "moon:options");
   private final FileNamer fileNamer = new FileNamer();
   private final AttachmentHandler attachmentHandler = inject();
 
@@ -43,11 +52,60 @@ public abstract class AbstractDriverFactory implements DriverFactory {
     return logFile;
   }
 
+  /**
+   * Selenium passes the browser's proxy to Selenium Manager, so Selenium Manager would go through Selenide's MITM proxy
+   * to download drivers/browsers. Selenium Manager doesn't trust the MITM certificate (since 4.52.0 it even breaks its json output).
+   * So we find the driver (and browser) bypassing Selenide proxy, and Selenium will not run Selenium Manager anymore.
+   * <p>
+   * If Selenide proxy is chained to an outside proxy (e.g. a corporate proxy), Selenium Manager uses the outside proxy.
+   * If Selenide proxy is not used, Selenium passes the user's proxy (if any) to Selenium Manager as usual.
+   * <p>
+   * See <a href="https://github.com/SeleniumHQ/selenium/issues/18263">Selenium issue 18263</a>
+   */
+  protected void findBinariesWithoutSelenideProxy(@Nullable Proxy proxy, DriverService service,
+                                                  MutableCapabilities options, Consumer<String> setBrowserBinary) {
+    if (!(proxy instanceof SelenideSeleniumProxy selenideProxy)) return;
+
+    MutableCapabilities optionsWithOutsideProxy = new MutableCapabilities(options);
+    optionsWithOutsideProxy.setCapability(PROXY, selenideProxy.outsideProxy());
+    DriverFinder finder = driverFinder(service, optionsWithOutsideProxy);
+    service.setExecutable(finder.getDriverPath());
+    if (finder.hasBrowserPath()) {
+      setBrowserBinary.accept(finder.getBrowserPath());
+      options.setCapability(BROWSER_VERSION, (Object) null);
+    }
+  }
+
+  DriverFinder driverFinder(DriverService service, Capabilities options) {
+    return new DriverFinder(service, options);
+  }
+
   protected <DS extends DriverService, B extends DriverService.Builder<DS, ?>> DS withLog(Config config, B dsBuilder) {
     if (config.webdriverLogsEnabled()) {
       dsBuilder.withLogFile(webdriverLog(config));
     }
+    setTimezone(config, dsBuilder);
     return dsBuilder.build();
+  }
+
+  /**
+   * The browser inherits environment variables from the webdriver process,
+   * so the whole browser (all tabs, windows and workers) uses this timezone.
+   */
+  protected void setTimezone(Config config, DriverService.Builder<?, ?> dsBuilder) {
+    String timezone = timezone(config);
+    if (timezone == null) return;
+
+    if (isWindows()) {
+      log.warn("Browsers on Windows ignore environment variable TZ, so timezone {} is not applied", timezone);
+      return;
+    }
+    log.info("Set browser timezone to {}", timezone);
+    dsBuilder.withEnvironment(Map.of("TZ", timezone));
+  }
+
+  protected boolean isWindows() {
+    return IS_OS_WINDOWS;
   }
 
   protected MutableCapabilities createCommonCapabilities(Config config, Browser browser, @Nullable Proxy proxy) {
@@ -71,10 +129,55 @@ public abstract class AbstractDriverFactory implements DriverFactory {
       capabilities.setCapability(ACCEPT_INSECURE_CERTS, true);
     }
     capabilities.setCapability(UNHANDLED_PROMPT_BEHAVIOUR, IGNORE);
+    setRemoteTimezone(config, capabilities);
 
     transferCapabilitiesFromSystemProperties(capabilities);
 
-    return merge(capabilities, config.browserCapabilities());
+    T result = merge(capabilities, config.browserCapabilities());
+    setVendorTimezone(config, result);
+    return result;
+  }
+
+  /**
+   * Selenium Grid (in Docker) starts the remote browser with given timezone.
+   */
+  private void setRemoteTimezone(Config config, MutableCapabilities capabilities) {
+    String timezone = timezone(config);
+    if (config.remote() != null && timezone != null) {
+      capabilities.setCapability("se:timeZone", timezone);
+    }
+  }
+
+  /**
+   * Selenoid and Moon read timezone from their own options, not from "se:timeZone".
+   * We only extend these options if they are already given, so that other grids don't receive unknown capabilities.
+   */
+  private void setVendorTimezone(Config config, MutableCapabilities capabilities) {
+    String timezone = timezone(config);
+    if (config.remote() == null || timezone == null) return;
+
+    for (String name : VENDOR_OPTIONS) {
+      if (capabilities.getCapability(name) instanceof Map<?, ?> options && !options.containsKey("timeZone")) {
+        Map<Object, Object> optionsWithTimezone = new HashMap<>(options);
+        optionsWithTimezone.put("timeZone", timezone);
+        capabilities.setCapability(name, optionsWithTimezone);
+      }
+    }
+  }
+
+  /**
+   * Browsers silently fall back to UTC for an unknown timezone, so we fail fast on a typo.
+   * <p>
+   * Only tz database IDs are accepted (e.g. "Europe/Tallinn", "UTC", "Etc/GMT-2").
+   * Offset-style IDs like "GMT+02:00" are rejected: Java reads it as UTC+2, but {@code TZ} reads it as UTC-2.
+   */
+  protected @Nullable String timezone(Config config) {
+    String timezone = config.timezone();
+    if (isBlank(timezone)) return null;
+    if (!ZoneId.getAvailableZoneIds().contains(timezone)) {
+      throw new IllegalArgumentException("Invalid timezone: \"" + timezone + "\". Use a tz database ID like \"Europe/Tallinn\"");
+    }
+    return timezone;
   }
 
   @SuppressWarnings("unchecked")
