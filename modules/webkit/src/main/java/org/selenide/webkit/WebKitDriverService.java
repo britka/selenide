@@ -412,8 +412,10 @@ public class WebKitDriverService extends DriverService {
       else if (WebKitManager.isWindows() && !headless) {
         allocatedInspectorPort = allocateUniqueFreePort();
         args.add("--target=127.0.0.1:" + allocatedInspectorPort);
-      }
-      else {
+      } else if (!WebKitManager.isWindows()) {
+        args.add("-a");
+        args.add("--port" + allocateUniqueFreePort());
+      } else {
         allocatedInspectorPort = 0;
       }
     }

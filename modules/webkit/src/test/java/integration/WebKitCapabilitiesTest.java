@@ -125,16 +125,8 @@ final class WebKitCapabilitiesTest extends BaseWebKitTest {
     Cookie cookie = cookies().get("webkit_cookie");
 
     cookies().shouldHave(cookie("webkit_cookie", "cookie_val_42"));
+    cookies().delete("webkit_cookie");
 
-//    assertThat(cookie).isNotNull();
-//    assertThat(cookie.getValue()).isEqualTo("cookie_val_42");
-
-
-// TODO delete cookie is not working now
-//    WebDriverRunner.getWebDriver().manage().deleteCookieNamed("webkit_cookie");//
-//    cookies().object().delete("webkit_cookie");
-
-    executeJavaScript("document.cookie = 'webkit_cookie=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'");
     cookies().shouldNotHave(cookie("webkit_cookie"));
 
     cookies().add(cookie);
