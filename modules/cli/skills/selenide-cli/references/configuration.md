@@ -18,13 +18,14 @@ selenide open [flags] <url>
 | `--browser-version=<v>` | request a specific browser version |
 | `--browser-binary=<path>` | use a browser binary at a custom path |
 | `--browser-position=<XxY>` | window position |
+| `--timezone=<zone>` | timezone for all tabs and windows, e.g. `Europe/Tallinn` |
 | `--base-url=<url>` | base URL; a relative `open` target resolves against it |
 | `--timeout=<ms>` | element/assertion timeout (default 4000) |
 | `--polling-interval=<ms>` | polling interval for waits |
 | `--remote=<url>` | Selenium Grid / remote WebDriver URL |
 | `--page-load-strategy=<s>` | `normal` / `eager` / `none` |
 | `--page-load-timeout=<ms>` | page load timeout |
-| `--reports-folder=<dir>` | where `screenshot` writes PNGs |
+| `--reports-folder=<dir>` | where `screenshot` writes PNGs and HTML page dumps |
 | `--downloads-folder=<dir>` | download target folder |
 | `--capability=<name>=<value>` | WebDriver capability; repeatable (see below) |
 
@@ -53,4 +54,4 @@ same capability name is given more than once, the last value wins.
 - No manual driver setup: **Selenium Manager** downloads the matching driver on first run (the
   daemon must have network access for that initial download, or a pre-provisioned driver).
 - Screenshots (`screenshot` command) are written on the **daemon host** under `--reports-folder`
-  (default `build/reports/tests`).
+  (default `build/reports/tests`) as `<name>.png` plus `<name>.html` (the rendered page source).

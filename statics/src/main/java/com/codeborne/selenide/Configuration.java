@@ -377,6 +377,27 @@ public class Configuration {
   public static long remoteConnectionTimeout = defaults.remoteConnectionTimeout();
 
   /**
+   * Timezone for all browsers (all tabs and windows), e.g. "Europe/Tallinn" or "America/New_York".
+   * Only tz database IDs are accepted; offset-style IDs like "GMT+02:00" are rejected (use "Etc/GMT-2" instead).
+   * <p>
+   * For a local Chrome, Edge or Firefox, the browser process is started with environment variable {@code TZ}
+   * (note: browsers on Windows ignore it, so on Windows this setting is skipped with a warning).
+   * For a remote browser, capability {@code se:timeZone} is set (supported by Selenium Grid in Docker).
+   * If capabilities {@code selenoid:options} or {@code moon:options} are given, {@code timeZone} is added to them as well.
+   * <p>
+   * To change the timezone of the current tab only, use {@link Selenide#clock()}.
+   * <p>
+   * Can be configured either programmatically, via selenide.properties file
+   * or by system property "-Dselenide.timezone=Europe/Tallinn"
+   * <br>
+   * Default: null (the system default timezone)
+   *
+   * @since 7.19.1
+   */
+  @Nullable
+  public static String timezone = defaults.timezone();
+
+  /**
    * @since 7.5.1
    * @return a new instance of {@link SelenideConfig} containing all settings from {@link Configuration}.
    * This instance can be safely modified (without affecting the origin {@link Configuration}).
@@ -415,6 +436,7 @@ public class Configuration {
       .headless(headless)
       .browserBinary(browserBinary)
       .remoteReadTimeout(remoteReadTimeout)
-      .remoteConnectionTimeout(remoteConnectionTimeout);
+      .remoteConnectionTimeout(remoteConnectionTimeout)
+      .timezone(timezone);
   }
 }

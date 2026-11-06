@@ -38,6 +38,27 @@ class CliConfigTest {
   }
 
   @Test
+  void appliesTimezone() {
+    assertThat(CliConfig.toConfig(new String[]{"--timezone=Asia/Tokyo"}).timezone()).isEqualTo("Asia/Tokyo");
+  }
+
+  @Test
+  void alwaysSavesPageSourceAsPlainHtml() {
+    String previousValue = System.setProperty("selenide.savePageSourceWithResources", "true");
+    try {
+      assertThat(CliConfig.toConfig(new String[0]).savePageSourceWithResources()).isFalse();
+    }
+    finally {
+      if (previousValue == null) {
+        System.clearProperty("selenide.savePageSourceWithResources");
+      }
+      else {
+        System.setProperty("selenide.savePageSourceWithResources", previousValue);
+      }
+    }
+  }
+
+  @Test
   void ignoresPositionalUrlAndUnknownFlags() {
     SelenideConfig config = CliConfig.toConfig(new String[]{"https://example.com", "--browser=edge"});
     assertThat(config.browser()).isEqualTo("edge");
