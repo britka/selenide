@@ -194,7 +194,7 @@ jobs:
 
   run-webkit-tests-on-linux:
     name: linux:webkit
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v7
